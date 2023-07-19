@@ -1,3 +1,1 @@
-#Shell permissions
-
-This is to teach and show you about users and permissions on a file
+This repository contains directories and files on working with shell and the basics of c
