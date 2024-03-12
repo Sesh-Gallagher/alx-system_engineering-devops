@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Script that displays the time for 12 horus and 59 minutes.
+# To display hours from 0 to 12
+# To display minutes from 1 to 59
+
+hr=0
+
+while [ $hr -le 12 ]
+do
+  echo "Hr: $hr"
+  min=1
+  while [ $min -le 59 ]
+  do
+    echo "$min"
+    (( min++ ))
+  done
+  (( hr++ ))
+
+done
