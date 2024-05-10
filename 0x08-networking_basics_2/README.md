@@ -1,1 +1,1 @@
- This read me contains information of this file and its contents 
+ This readme contains information about this file and all its contents 
