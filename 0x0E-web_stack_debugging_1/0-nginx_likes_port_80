@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Script that debugs nginx installation to "listen" on port 80
-link="/etc/nginx/sites-enabled/default"
-target="/etc/nginx/sites-available/default
-sudo rm $link
-sudo ln -s $target $link
+# Script that debugs nginx installation to connect on port 80
+
+sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/nginx.conf
 sudo service nginx restart
