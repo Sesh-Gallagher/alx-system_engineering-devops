@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Script that debugs nginx installation to "listen" on port 80
-
-apt - get update -y
-apt - get install -y nginx
-sudo service nginx enable
-sudo service nginx start
+link="/etc/nginx/sites-enabled/default"
+target="/etc/nginx/sites-available/default
+sudo rm $link
+sudo ln -s $target $link
+sudo service nginx restart
