@@ -2,4 +2,4 @@
 #Used script as task 0 but -f added to ln to forcefully remove file
 ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 sudo service nginx restart
-rm /run/nginx/.pid
+rm /run/nginx.pid
