@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
-#Install nginx on your web-01
-#Nginx should be listening on port 80
+#script that installs nginx on your web-01
+#Once connected Nginx should be listen to port 80
 
-# Methods to update the package list and install nginx
 apt-get -y update
 apt-get -y install nginx
 
-
-ufw allow 'Nginx HTTP'
-
-# To Create a custom index.html file with "Hello World!" message
+sudo ufw allow 'Nginx HTTP'
 echo "Hello World!" > /var/www/html/index.html
-
-# Restart 
 service nginx restart
