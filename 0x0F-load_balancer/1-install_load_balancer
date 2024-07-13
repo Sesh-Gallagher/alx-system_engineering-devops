@@ -1,29 +1,55 @@
 #!/usr/bin/env bash
 #Install and configure HAproxy on your lb-01 server.
-#Distribute requests using a roundrobin algorithm
-#Make sure that HAproxy can be managed via an init script
+#Configure HAproxy so that it send traffic to web-01 and web-02
 
-# Update 
-sudo apt -y update
+echo -e " Updating and doing some minor checks...${reset}\n"
 
-# Installation
-sudo apt-get -y install haproxy=2.8.\*
-sudo add-apt-repository -y ppa:vbernat/haproxy-2.8
-sudo apt-get -y install --no-install-recommends software-properties-common
+function install() {
+	command -v "$1" &> /dev/null
 
-# # Configure HA proxy
-sed -i "/127.0.0.1 localhost/a 34.227.89.70 10323-lb-01\n34.224.6.149 10323-web-02\n54.236.25.169 10323-web-01" /etc/hosts
-{
-        echo -e "# Configurations for web servers"
-        echo -e "\nfrontend web_frontend"
-        echo -e "\tbind *:80"
-        echo -e "\tmode http"
-        echo -e "\toption h1-case-adjust-bogus-client"
-        echo -e "\tdefault_backend web_backend"
-        echo -e "\nbackend web_backend"
-        echo -e "\tbalance roundrobin"
-        echo -e "\tserver 10323-web-01 54.236.25.169:80 check"
-        echo -e "\tserver 10323-web-02 34.224.6.149:80 check"
-} >> /etc/haproxy/haproxy.cfg
+	#shellcheck disable=SC2181
+	if [ $? -ne 0 ]; then
+		echo -e "	Installing: $1${reset}\n"
+		sudo apt-get update -y -qq && \
+			sudo apt-get install -y "$1" -qq
+		echo -e "\n"
+	else
+		echo -e "	${1} is already installed.${reset}\n"
+	fi
+}
 
-sudo systemctl restart haproxy
+install haproxy
+
+echo -e "\n Setting up some minor stuff.${reset}\n"
+
+sudo cp /etc/haproxy/haproxy.cfg haproxy_default.backup
+
+server_config=\
+"
+defaults
+  mode http
+  timeout client 15s
+  timeout connect 10s
+  timeout server 15s
+  timeout http-request 10s
+
+frontend wastedpotential-tech-frontend
+    bind *:80
+    default_backend wastedpotential-tech-backend
+
+backend wastedpotential-tech-backend
+    balance roundrobin
+    server 453-web-01 107.23.62.36.80 check
+    server 453-web-02 100.26.174.122.80 check
+"
+
+# shellcheck disable=SC2154
+echo "$server_config" | sudo dd status=none of=/etc/haproxy/haproxy.cfg
+
+echo "ENABLED=1" | sudo dd status=none of=/etc/default/haproxy
+
+if [ "$(pgrep -c haproxy)" -le 0 ]; then
+	sudo service haproxy start
+else
+	sudo service haproxy restart
+fi
