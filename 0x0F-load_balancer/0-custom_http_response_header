@@ -1,45 +1,79 @@
 #!/usr/bin/env bash
-#Configure Nginx so that its HTTP response contains a custom header (on web-01 and web-02)
+#Bash script to configure web-02 to be identical to web-01.
 #The name of the custom HTTP header must be X-Served-By
-#The value of the custom HTTP header must be the hostname of the server Nginx is running on
-#install Nginx on web server
-sudo apt-get update
-sudo apt-get install nginx
+#The value of the custom HTTP header must be the hostname
+#of the server Nginx is running on
 
-# confirgure firewall to all request through port 80
-sudo ufw allow 'Nginx HTTP
 
-# start NGINX Service
-sudo service nginx start
+echo -e "$Updating and doing some minor checks...${reset}\n"
 
-# create index page 
-sudo touch /var/www/html/index.html
+function install() {
+	command -v "$1" &> /dev/null
 
-# update user permissions
-sudo chmod u+x /var/www/html/index.html
+	#shellcheck disable=SC2181
+	if [ $? -ne 0 ]; then
+		echo -e "	Installing: $1${reset}\n"
+		sudo apt-get update -y -qq && \
+			sudo apt-get install -y "$1" -qq
 
-# create hello world index page
+		echo -e "\n"
+	else
+		echo -e "	${1} is already installed.${reset}\n"
+	fi
+}
+
+install nginx
+
+echo -e "\n Setting up some minor stuff.${reset}\n"
+
+sudo ufw allow 'Nginx HTTP'
+
+if [ -d "/var/www" ]; then
+	sudo chown -R "$USER":"$USER" /var/www
+	sudo chmod -R 755 /var/www
+else
+	sudo mkdir -p /var/www
+	sudo chown -R "$USER":"$USER" /var/www
+	sudo chmod -R 755 /var/www
+fi
+
+for dir in /var/www/{html,error}; do
+	if ! [ -d "$dir" ]; then
+		mkdir -p "$dir"
+	fi
+done
+
 echo "Hello World!" > /var/www/html/index.html
 
-# Create 404 error page
-sudo touch /var/www/html/404.html
-echo "Ceci n'est pas une page" | sudo tee /var/www/html/404.html
+echo "Ceci n'est pas une page" > /var/www/html/error_404.html
 
-# print server
-printf %s "server {
-    listen 80;
-    listen [::]:80 default_server;
-    add_header X-Served-By $HOSTNAME;
-    root   /etc/nginx/html;
-    index  index.html index.htm;
-    location /redirect_me {
-       return 301 https://youtu.be/3_mt7qZldLs;
-    }
-    error_page 404 /404.html;
-    location /404 {
-      root /etc/nginx/html;
-      internal;
-    }
-}" > /etc/nginx/sites-available/default
+sudo cp /etc/nginx/sites-enabled/default nginx-sites-enabled_default.backup
 
-sudo service nginx restart
+server_config=\
+"server {
+		listen 80 default_server;
+		listen [::]:80 default_server;
+		root /var/www/html;
+		index index.html index.htm index.nginx-debian.html
+		server_name_;
+		add_header X-Served-By \$hostname;
+		location / {
+			try_files \$uri \$uri/ =404;
+		}
+		if (\$request_filename ~ redirect_me){
+			rewrite ^ https://th3-gr00t.tk/ permanent;
+		}
+		error_page 404 /error_404.html;
+		location = /error_404.html {
+			internal;
+		}
+}"
+
+#shellcheck disable=SC2154
+echo "$server_config" | sudo dd status=none of=/etc/nginx/sites-enabled/default
+
+if [ "$(pgrep -c nginx)" -le 0 ]; then
+	sudo service nginx start
+else
+	sudo service nginx restart
+fi
