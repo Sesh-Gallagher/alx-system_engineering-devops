@@ -39,8 +39,8 @@ frontend wastedpotential-tech-frontend
 
 backend wastedpotential-tech-backend
     balance roundrobin
-    server 453-web-01 107.23.62.36:80 check
-    server 453-web-02 54.166.105.114:80 check
+    server 475183-web-01 100.25.167.17:80 check
+    server 475183-web-02 52.207.75.214:80 check
 "
 
 # shellcheck disable=SC2154
